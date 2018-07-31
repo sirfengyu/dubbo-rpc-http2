@@ -1,2 +1,2 @@
 # dubbo-rpc-http2 (In development)
-http2 for dubbo framework
+http2 protocol for dubbo framework
