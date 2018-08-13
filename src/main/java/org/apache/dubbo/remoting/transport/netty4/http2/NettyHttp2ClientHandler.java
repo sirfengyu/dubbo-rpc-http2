@@ -262,24 +262,27 @@ public class NettyHttp2ClientHandler extends AbstractHttp2CodecHandler {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        try{
+            Payload payload;
+            Channel channel = ctx.channel();
+            if ((payload = channel.attr(Payload.KEY).get()) == null) {
+                promise.setFailure(new RemotingException((InetSocketAddress) channel.localAddress(),
+                        (InetSocketAddress) channel.remoteAddress(), "Ignore to write because of not found payload from key 'http2.payload', message: "
+                        + msg + " , message type:" + msg.getClass().getName() + " channel:" + channel));
+                return;
+            }
 
-        Payload payload;
-        Channel channel = ctx.channel();
-        if ((payload = channel.attr(Payload.KEY).get()) == null) {
-            promise.setFailure(new RemotingException((InetSocketAddress) channel.localAddress(),
-                    (InetSocketAddress) channel.remoteAddress(), "Ignore to write because of not found payload from key 'http2.payload', message: "
-                    + msg + " , message type:" + msg.getClass().getName() + " channel:" + channel));
-            return;
-        }
+            Object message = payload.message();
 
-        Object message = payload.message();
-
-        if (message instanceof Request) {
-            sendRpcRequest(ctx, (Request) message, payload, promise);
-        } else if (message instanceof Response) {
-            sendRpcResponse(ctx, (Response) message, payload, promise);
-        } else if (message == NOOP_MESSAGE) {
-            ctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+            if (message instanceof Request) {
+                sendRpcRequest(ctx, (Request) message, payload, promise);
+            } else if (message instanceof Response) {
+                sendRpcResponse(ctx, (Response) message, payload, promise);
+            } else if (message == NOOP_MESSAGE) {
+                ctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+            }
+        }finally {
+            ReferenceCountUtil.release(msg);
         }
     }
 

@@ -209,22 +209,25 @@ public class NettyHttp2ServerHandler extends AbstractHttp2CodecHandler {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        try {
+            Payload payload = null;
+            Channel channel = ctx.channel();
+            if ((payload = ctx.channel().attr(Payload.KEY).get()) == null) {
+                promise.setFailure(new RemotingException((InetSocketAddress) channel.localAddress(),
+                        (InetSocketAddress) channel.remoteAddress(), "Ignore to write because of not found payload from key 'http2.payload', message: "
+                        + msg + " , message type:" + msg.getClass().getName() + " channel:" + channel));
+                return;
+            }
 
-        Payload payload = null;
-        Channel channel = ctx.channel();
-        if ((payload = ctx.channel().attr(Payload.KEY).get()) == null) {
-            promise.setFailure(new RemotingException((InetSocketAddress) channel.localAddress(),
-                    (InetSocketAddress) channel.remoteAddress(), "Ignore to write because of not found payload from key 'http2.payload', message: "
-                    + msg + " , message type:" + msg.getClass().getName() + " channel:" + channel));
-            return;
-        }
-
-        Object message = payload.message();
-        if (message instanceof Response) {
-            sendRpcResponse(ctx, (Response) message, payload, promise);
-        } else if (message instanceof Request) {
-            // may be event ?
-            sendRpcRequest(ctx, (Request) message, payload, promise);
+            Object message = payload.message();
+            if (message instanceof Response) {
+                sendRpcResponse(ctx, (Response) message, payload, promise);
+            } else if (message instanceof Request) {
+                // may be event ?
+                sendRpcRequest(ctx, (Request) message, payload, promise);
+            }
+        } finally {
+            ReferenceCountUtil.release(msg);
         }
     }
 
