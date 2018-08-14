@@ -60,8 +60,12 @@ public abstract class AbstractHttp2CodecHandler extends Http2ConnectionHandler {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        super.channelActive(ctx);
-        sendInitialConnectionWindow();
+        try {
+            this.userEventTriggered(ctx, AbstractHttp2Initializer.Http2ConnectionActiveEvent.INSTANCE);
+        } finally {
+            super.channelActive(ctx);
+            sendInitialConnectionWindow();
+        }
     }
 
     @Override

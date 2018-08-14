@@ -79,15 +79,4 @@ public class NettyHttp2ServerInitializer extends AbstractHttp2Initializer<NioSoc
             throw new RuntimeException("Not support negotiate type '" + negotiate + "' for http2 protocol.");
         }
     }
-
-    @Override
-    protected void initialComplete(NioSocketChannel channel) {
-        if (sslCtx == null) {
-            // notify http2 connection established
-            String negotiate = url.getParameter(Constants.NEGOTIATE_KEY, Constants.DEFAULT_NEGOTIATE);
-            if (negotiate.equals(Constants.DEFAULT_NEGOTIATE)) {
-                channel.pipeline().fireUserEventTriggered(HttpServerConnectionActiveEvent.INSTANCE);
-            }
-        }
-    }
 }

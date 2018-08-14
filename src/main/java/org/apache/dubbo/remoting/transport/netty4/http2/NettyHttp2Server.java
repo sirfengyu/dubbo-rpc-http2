@@ -59,7 +59,7 @@ public class NettyHttp2Server extends NettyServer {
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new NettyHttp2ServerInitializer(getUrl()) {
                     @Override
-                    protected void negotiateComplete(NioSocketChannel ch) {
+                    protected void negotiationCompleted(NioSocketChannel ch) {
                         NettyCodecAdapter adapter = new NettyCodecAdapter(getCodec(), getUrl(), NettyHttp2Server.this);
                         ch.pipeline()
                                 .addLast("decoder", adapter.getDecoder())

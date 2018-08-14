@@ -98,14 +98,9 @@ public abstract class AbstractHttp2Initializer<C extends Channel> extends Channe
             configureClearText(channel);
         }
         channel.pipeline().addLast(new Http2NegotiatorHandler());
-        initialComplete(channel);
     }
 
-    protected void negotiateComplete(C channel) {
-
-    }
-
-    protected void initialComplete(C channel) {
+    protected void negotiationCompleted(C channel) {
 
     }
 
@@ -124,11 +119,11 @@ public abstract class AbstractHttp2Initializer<C extends Channel> extends Channe
 
     protected abstract void configureClearText(C channel);
 
-    public static class HttpServerConnectionActiveEvent {
-        static final HttpServerConnectionActiveEvent INSTANCE =
-                new HttpServerConnectionActiveEvent();
+    public static class Http2ConnectionActiveEvent {
+        static final Http2ConnectionActiveEvent INSTANCE =
+                new Http2ConnectionActiveEvent();
 
-        private HttpServerConnectionActiveEvent() {
+        private Http2ConnectionActiveEvent() {
         }
     }
 
@@ -144,30 +139,30 @@ public abstract class AbstractHttp2Initializer<C extends Channel> extends Channe
             // http/1.x client upgrade event
             if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
                 ctx.pipeline().remove(this);
-                negotiateComplete((C) ctx.channel());
+                negotiationCompleted((C) ctx.channel());
             }
             // if use ssl, both side should be http2 protocol
             else if (evt == SslHandshakeCompletionEvent.SUCCESS) {
                 ctx.pipeline().remove(this);
-                negotiateComplete((C) ctx.channel());
+                negotiationCompleted((C) ctx.channel());
             }
             // http/1.x server upgrade event
             else if (evt instanceof HttpServerUpgradeHandler.UpgradeEvent) {
                 HttpServerUpgradeHandler.UpgradeEvent upgradeEvent = (HttpServerUpgradeHandler.UpgradeEvent) evt;
                 if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, upgradeEvent.protocol())) {
                     ctx.pipeline().remove(this);
-                    negotiateComplete((C) ctx.channel());
+                    negotiationCompleted((C) ctx.channel());
                 }
-            } else if (evt instanceof HttpServerConnectionActiveEvent) {
+            } else if (evt instanceof AbstractHttp2Initializer.Http2ConnectionActiveEvent) {
                 ctx.pipeline().remove(this);
-                negotiateComplete((C) ctx.channel());
+                negotiationCompleted((C) ctx.channel());
             }
             // both side is http2 protocol
             else if (evt instanceof Http2ConnectionPrefaceAndSettingsFrameWrittenEvent) {
                 // Send prefance immediately
                 ctx.flush();
                 ctx.pipeline().remove(this);
-                negotiateComplete((C) ctx.channel());
+                negotiationCompleted((C) ctx.channel());
             } else if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_REJECTED) {
                 logger.error("HTTP/2 upgrade rejected , evt: " + evt);
                 ctx.close();
