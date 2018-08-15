@@ -60,7 +60,7 @@ public class NettyHttp2Client extends NettyClient {
             @Override
             protected void negotiationCompleted(SocketChannel ch) {
                 NettyCodecAdapter adapter = new NettyCodecAdapter(getCodec(), getUrl(), NettyHttp2Client.this);
-                channel.pipeline()
+                ch.pipeline()
                         .addLast("decoder", adapter.getDecoder())
                         .addLast("encoder", adapter.getEncoder())
                         .addLast("handler", nettyClientHandler);
